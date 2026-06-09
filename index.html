@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>English Hospital Guide - Webkit Speech</title>
+    <style>
+        :root {
+            --primary-color: #2b6cb0;
+            --primary-hover: #2c5282;
+            --bg-color: #f7fafc;
+            --card-bg: #ffffff;
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --accent-color: #e53e3e; /* Đổi sang màu đỏ/hồng cho phù hợp y tế */
+            --success-color: #38a169;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 12px;
+        }
+
+        .app-container {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            margin-top: 10px;
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            color: var(--primary-color);
+            margin-bottom: 2px;
+        }
+
+        header p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .media-container {
+            width: 100%;
+            height: 220px;
+            background-color: #edf2f7;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .character-bubble {
+            background: #ebf8ff;
+            border-left: 4px solid var(--primary-color);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: left;
+            margin-bottom: 12px;
+        }
+
+        .character-name {
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .story-text {
+            font-size: 1rem;
+            line-height: 1.4;
+            font-style: italic;
+        }
+
+        .interaction-panel {
+            background: #fff5f5; /* Nền đỏ nhạt */
+            padding: 14px;
+            border-radius: 10px;
+            text-align: left;
+            margin-bottom: 16px;
+            border: 1px dashed #feb2b2;
+        }
+
+        .interaction-panel p {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--accent-color);
+            font-size: 0.9rem;
+        }
+
+        .option-line {
+            margin: 8px 0;
+            font-size: 0.95rem;
+            color: #4a5568;
+            padding-left: 15px;
+            position: relative;
+            line-height: 1.3;
+        }
+
+        .option-line::before {
+            content: "•";
+            color: var(--accent-color);
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .voice-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 16px;
+            font-size: 1.05rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(43, 108, 176, 0.15);
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .voice-btn:active {
+            background-color: var(--primary-hover);
+            transform: scale(0.98);
+        }
+
+        .voice-btn:disabled {
+            background-color: #cbd5e0;
+            box-shadow: none;
+        }
+
+        .restart-btn {
+            background-color: transparent;
+            color: var(--text-muted);
+            border: 1px solid #e2e8f0;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .status-box {
+            margin-top: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            background: #f7fafc;
+            width: 100%;
+        }
+
+        .status-active {
+            color: var(--accent-color);
+            font-weight: 600;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-success { color: var(--success-color); font-weight: 600; }
+        .status-error { color: #e53e3e; font-weight: 600; }
+
+        .transcript-zone {
+            margin-top: 6px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .transcript-text { font-weight: bold; color: #e53e3e; }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1>🏥 Hospital Guide</h1>
+        <p>Luyện giao tiếp tiếng Anh khi đi bệnh viện</p>
+    </header>
+    
+    <div class="media-container">
+        <img id="scenery-img" src="cong_benh_vien.jpg" alt="Hospital Scene">
+    </div>
+
+    <div class="character-bubble">
+        <div class="character-name">Alex (Patient)</div>
+        <div id="story" class="story-text">...</div>
+    </div>
+
+    <div class="interaction-panel" id="interaction-box">
+        <p>🔊 Nhấn nút dưới rồi đọc TO câu gợi ý:</p>
+        <div id="options-list">
+            </div>
+    </div>
+
+    <div class="controls">
+        <button id="start-btn" class="voice-btn">
+            <span id="btn-icon">🎙️</span> <span id="btn-text">Bắt đầu nói (Chạm để nói)</span>
+        </button>
+        <button class="restart-btn" onclick="resetGame()">Chơi lại từ đầu</button>
+    </div>
+    
+    <div class="status-box">
+        <div id="status-text">Sẵn sàng. Hãy cấp quyền truy cập Micro khi được hỏi.</div>
+        <div class="transcript-zone">Hệ thống nghe được: <span id="transcript-text" class="transcript-text">...</span></div>
+    </div>
+</div>
+
+<script>
+    // Cơ sở dữ liệu kịch bản Bệnh viện
+    const scriptTree = {
+        'start': {
+            text: 'Alex: "Hi! Thanks for coming to the hospital with me. I have a terrible headache and a slight fever. Where should we go first?"',
+            img: 'cong_benh_vien.jpg',
+            keywords: {
+                'reception': 'reception_scene',
+                'desk': 'reception_scene',
+                'emergency': 'emergency_scene'
+            },
+            options: [
+                "Let's go to the reception desk",
+                "Let's go to the emergency room"
+            ]
+        },
+        'emergency_scene': {
+            text: 'Alex: "Actually, it is just a mild fever, not a severe emergency. I think we should just register normally. Where to now?"',
+            img: 'cap_cuu.jpg',
+            keywords: {
+                'reception': 'reception_scene',
+                'desk': 'reception_scene'
+            },
+            options: [
+                "Okay, let's go to the reception desk"
+            ]
+        },
+        'reception_scene': {
+            text: 'Alex: "The receptionist gave me a queue number. They said I need to see the general practitioner for a check-up. Where is that?"',
+            img: 'quay_tiep_nhan.jpg',
+            keywords: {
+                'doctor': 'doctor_scene',
+                'room': 'doctor_scene',
+                'clinic': 'doctor_scene'
+            },
+            options: [
+                "Let's go to the doctor's room",
+                "Let's go to the clinic"
+            ]
+        },
+        'doctor_scene': {
+            text: 'Alex: "The doctor checked my temperature and gave me a prescription for some painkillers and vitamins. What is our last stop?"',
+            img: 'phong_kham.jpg',
+            keywords: {
+                'pharmacy': 'pharmacy_scene',
+                'drugstore': 'pharmacy_scene'
+            },
+            options: [
+                "Let's go to the pharmacy"
+            ]
+        },
+        'pharmacy_scene': {
+            text: 'Alex: "I got all my medicines. Thank you so much for guiding me through the hospital today! I will go home and rest." 💊🎉',
+            img: 'nha_thuoc.jpg',
+            keywords: {}, 
+            options: []
+        }
+    };
+
+    let currentStage = 'start';
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+
+    if (!SpeechRecognition) {
+        alert("Thiết bị này cần mở bằng Google Chrome (Android) hoặc Safari (iPhone) để dùng chức năng nhận diện giọng nói!");
+    } else {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+    }
+
+    const startBtn = document.getElementById('start-btn');
+    const btnText = document.getElementById('btn-text');
+    const btnIcon = document.getElementById('btn-icon');
+    const statusText = document.getElementById('status-text');
+    const transcriptText = document.getElementById('transcript-text');
+    const sceneryImg = document.getElementById('scenery-img');
+    const storyText = document.getElementById('story');
+    const optionsList = document.getElementById('options-list');
+    const interactionBox = document.getElementById('interaction-box');
+
+    if (recognition) {
+        startBtn.addEventListener('click', () => {
+            try {
+                recognition.start();
+            } catch(e) {
+                console.log("Hệ thống nhận diện đang hoạt động.");
+            }
+        });
+
+        recognition.onstart = () => {
+            statusText.className = "status-active";
+            statusText.innerText = "🎙️ Đang nghe... Hãy đọc to câu thoại gợi ý bằng tiếng Anh.";
+            btnText.innerText = "Hệ thống đang lắng nghe...";
+            btnIcon.innerText = "🛑";
+            startBtn.disabled = true;
+        };
+
+        recognition.onspeechend = () => {
+            recognition.stop();
+            startBtn.disabled = false;
+            btnText.innerText = "Bắt đầu nói (Chạm để nói)";
+            btnIcon.innerText = "🎙️";
+        };
+
+        recognition.onresult = (event) => {
+            const resultText = event.results[0][0].transcript.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").trim();
+            transcriptText.innerText = `"${event.results[0][0].transcript}"`;
+            
+            let isMatched = false;
+            const currentKeywords = scriptTree[currentStage].keywords;
+
+            for (let key in currentKeywords) {
+                if (resultText.includes(key)) {
+                    currentStage = currentKeywords[key];
+                    updateApplicationState();
+                    isMatched = true;
+                    break;
+                }
+            }
+
+            if (isMatched) {
+                statusText.className = "status-success";
+                statusText.innerText = "✅ Nhận diện chính xác! Đã tự động đổi cảnh.";
+            } else {
+                statusText.className = "status-error";
+                statusText.innerText = "❌ Chưa khớp câu thoại gợi ý. Bạn hãy đọc lại rõ ràng hơn nhé!";
+            }
+        };
+
+        recognition.onerror = (event) => {
+            startBtn.disabled = false;
+            btnText.innerText = "Bắt đầu nói (Chạm để nói)";
+            btnIcon.innerText = "🎙️";
+            statusText.className = "status-error";
+            statusText.innerText = "Lỗi kết nối Micro: " + event.error;
+        };
+    }
+
+    function updateApplicationState() {
+        const stage = scriptTree[currentStage];
+        storyText.innerText = stage.text;
+        sceneryImg.src = stage.img;
+        optionsList.innerHTML = '';
+        
+        if (stage.options && stage.options.length > 0) {
+            interactionBox.style.display = 'block';
+            startBtn.style.display = 'inline-flex';
+            
+            stage.options.forEach(option => {
+                const div = document.createElement('div');
+                div.className = 'option-line';
+                div.innerHTML = `👉 <strong>${option}</strong>`;
+                optionsList.appendChild(div);
+            });
+        } else {
+            interactionBox.innerHTML = `<p style="color: var(--success-color); text-align:center; margin-bottom:0; font-weight:bold;">🎉 Bạn đã giúp bệnh nhân hoàn thành buổi khám bệnh!</p>`;
+            startBtn.style.display = 'none';
+            statusText.className = "status-success";
+            statusText.innerText = "Quy trình khám bệnh kết thúc.";
+        }
+    }
+
+    function resetGame() {
+        currentStage = 'start';
+        transcriptText.innerText = "...";
+        statusText.className = "";
+        statusText.innerText = "Sẵn sàng. Nhấn nút để kích hoạt microphone.";
+        updateApplicationState();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        updateApplicationState();
+
+        // Đã đổi tên file âm thanh thành alex.wav
+        const introAudio = new Audio('alex.wav');
+        introAudio.play().catch(() => {
+            const playAudioOnInteraction = () => {
+                introAudio.play();
+                document.removeEventListener('click', playAudioOnInteraction);
+                document.removeEventListener('touchstart', playAudioOnInteraction);
+            };
+            document.addEventListener('click', playAudioOnInteraction);
+            document.addEventListener('touchstart', playAudioOnInteraction);
+        });
+    });
+</script>
+
+</body>
+</html>
